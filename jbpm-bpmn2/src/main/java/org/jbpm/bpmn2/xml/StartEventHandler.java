@@ -16,8 +16,15 @@
 
 package org.jbpm.bpmn2.xml;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.IllegalFormatException;
 import java.util.List;
 import java.util.Map;
+import java.util.UnknownFormatConversionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.drools.xml.ExtensibleXmlParser;
 import org.jbpm.bpmn2.core.Message;
@@ -64,8 +71,7 @@ public class StartEventHandler extends AbstractNodeHandler {
                     }
                     subNode = subNode.getNextSibling();
                 }
-                ConstraintTrigger trigger = new ConstraintTrigger();
-                trigger.setConstraint(constraint);
+                ConstraintTrigger trigger = this.createConstraintTrigger(constraint);
                 startNode.addTrigger(trigger);
                 break;
             } else if ("signalEventDefinition".equals(nodeName)) {
@@ -205,4 +211,66 @@ public class StartEventHandler extends AbstractNodeHandler {
 		}
 	}
 
+    
+        private ConstraintTrigger createConstraintTrigger(String constraint){
+        try {
+            ConstraintTrigger trigger = new ConstraintTrigger();
+            
+            if (constraint == null || !constraint.startsWith("|-- auto-generated --|")){
+                trigger.setConstraint(constraint);
+                return trigger;
+            }
+            
+            StringBuilder defeaterRules = new StringBuilder();
+            StringBuilder constraintHeader = new StringBuilder();
+            StringBuilder constraintBody = new StringBuilder();
+            
+            BufferedReader reader = new BufferedReader(new StringReader(constraint));
+            String line;
+            boolean readingDefeaterRules = true;
+            boolean readingConstraintHeader = false;
+            boolean readingConstraintBody = false;
+            
+            //discard first line: "|-- auto-generated --|"
+            reader.readLine();
+            
+            while ((line = reader.readLine())!=null){
+                
+                if (line.startsWith("#-#")){
+                    continue;
+                } else if (line.equals("------")){
+                    readingDefeaterRules = false;
+                    readingConstraintHeader = true;
+                    readingConstraintBody = false;
+                    continue;
+                } else if (readingConstraintHeader && !line.startsWith("@")){
+                    readingDefeaterRules = false;
+                    readingConstraintHeader = false;
+                    readingConstraintBody = true;
+                }
+
+                
+                if (readingDefeaterRules){
+                    defeaterRules.append(line);
+                    defeaterRules.append("\n");
+                } else if (readingConstraintHeader){
+                    constraintHeader.append(line);
+                    constraintHeader.append("\n");
+                } else if (readingConstraintBody){
+                    constraintBody.append(line);
+                    constraintBody.append("\n");
+                }
+                
+            }
+            
+            trigger.setHeader(constraintHeader.toString());
+            trigger.setConstraint(constraintBody.toString());
+            trigger.setDefeaterRules(defeaterRules.toString());
+            
+            return trigger;
+        } catch (IOException ex) {
+            throw new IllegalStateException("Error parsing Conditional Start Event Condition",ex);
+        }
+            
+        }
 }
