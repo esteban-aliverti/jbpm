@@ -456,7 +456,13 @@ public class ProcessBuilderImpl implements ProcessBuilder {
 
     private String createStartConstraintRule(Process process,
                                              ConstraintTrigger trigger) {
-        String result = 
+        String result = "";
+        
+        if (trigger.getDefeaterRules() != null){
+            result += trigger.getDefeaterRules()+"\n\n";
+        }
+        
+        result += 
         	"rule \"RuleFlow-Start-" + process.getId() + "\" \n" + 
         	(trigger.getHeader() == null ? "" : "        " + trigger.getHeader() + " \n") + 
         	"    when\n" + 

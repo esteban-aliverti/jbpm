@@ -25,6 +25,7 @@ public class ConstraintTrigger extends Trigger implements Constrainable {
 
 	private String constraint;
 	private String header;
+	private String defeaterRules;
 
 	public String getConstraint() {
 		return constraint;
@@ -42,6 +43,15 @@ public class ConstraintTrigger extends Trigger implements Constrainable {
 		this.header = header;
 	}
 
+    public String getDefeaterRules() {
+        return defeaterRules;
+    }
+
+    public void setDefeaterRules(String defeaterRules) {
+        this.defeaterRules = defeaterRules;
+    }
+
+        
 	public void addConstraint(ConnectionRef connection, Constraint constraint) {
     	if (connection != null) {
     		throw new IllegalArgumentException(
